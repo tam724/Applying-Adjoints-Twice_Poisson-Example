@@ -20,6 +20,7 @@ In `main.jl` we have implemented a possible application: We parametrize the heat
 julia> include("main.jl")
 ```
 you'll get something like this:
-
-<img src="figures/gifs/material_optimization.gif" width="300"/>
-<img src="figures/gifs/measurement_optimization.gif" width="300"/>
+<div style="display:flex">
+    <img src="figures/gifs/material_optimization.gif" width="300"/>
+    <img src="figures/gifs/measurement_optimization.gif" width="300"/>
+</div>
