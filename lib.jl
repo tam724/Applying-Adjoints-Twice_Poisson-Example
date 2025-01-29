@@ -158,7 +158,6 @@ function build_backprojector(g, U, V)
     return (zeros(3), backprojector)
 end
 
-
 struct ModelFunction{Mspace, Uspace, Vspace, Mfunc, Omega, Backr, Pars}
     measurement_angles::Vector{Float64}
     extraction_locations::Vector{Tuple{Float64, Float64}}
@@ -177,6 +176,8 @@ struct ModelFunction{Mspace, Uspace, Vspace, Mfunc, Omega, Backr, Pars}
     I_M::Vector{Float64}
     
     b::Matrix{Float64}
+    btemp::Matrix{Float64}
+    b_proj::Vector{SparseMatrixCSC{Float64}}
     c::Matrix{Float64}
     
     Ω::Omega
@@ -203,7 +204,7 @@ function ModelFunction(measurement_angles, extraction_locations, grid_path; iter
     n = get_normal_vector(Γ)
 
     # nietsche coefficient α / cell radius
-    α_h = 500.0/(sqrt(π/num_free_dofs(M)))
+    α_h = 10.0/(sqrt(π/num_free_dofs(M)))
     #∫(FEFunction(FF.M, ones(num_free_dofs(FF.M))))*FF.pars.dΩ)[FF.Ω][:]
     pars = (dΩ=dΩ, dΓ=dΓ, n=n, α_h=[α_h])
     
@@ -213,6 +214,9 @@ function ModelFunction(measurement_angles, extraction_locations, grid_path; iter
     AT = sparse(transpose(A))
 
     excitations = hcat([assemble_linear(b_, (m, excitation_func(θ), pars), U, V) for θ in measurement_angles]...)
+    excitations_proj = [assemble_bilinear(b1_, (excitation_func(θ), pars), U, M) for θ in measurement_angles]
+    btemp = hcat([assemble_linear(b2_, (m, excitation_func(θ), pars), U, V) for θ in measurement_angles]...)
+
     extractions = hcat([assemble_linear(c_, (m, extraction_func(loc), pars), U, V) for loc in extraction_locations]...)
     
     I_M = 1.0 ./ Vector(diag(assemble_bilinear((u, v) -> ∫(u*v)dΩ, (), M, M)))
@@ -221,7 +225,7 @@ function ModelFunction(measurement_angles, extraction_locations, grid_path; iter
     skel, projr = build_projector((u, v) -> a1_(u, v, nothing, pars), U, V)
     Atemp = assemble_bilinear(a2_, (m, pars), U, V)
     return ModelFunction{typeof(M), typeof(U), typeof(V), typeof(m), typeof(Ω), typeof(backr), typeof(pars)}(
-        measurement_angles, extraction_locations, M, U, V, m, A, AT, iterative, I_M, excitations, extractions, Ω, pars, projr, Atemp, backr, zeros(num_free_dofs(V), length(extraction_locations)))
+        measurement_angles, extraction_locations, M, U, V, m, A, AT, iterative, I_M, excitations, btemp, excitations_proj, extractions, Ω, pars, projr, Atemp, backr, zeros(num_free_dofs(V), length(extraction_locations)))
 end
 
 function set_params!(f, p)
@@ -229,6 +233,10 @@ function set_params!(f, p)
     # f.A .= assemble_bilinear(a_, (f.m, f.pars), f.U, f.V)
     f.A.nzval .= f.Atemp.nzval .+ (f.projr * p)
     f.AT .= transpose(f.A)
+    f.b .= f.btemp
+    for i in 1:length(f.measurement_angles)
+        mul!(@view(f.b[:, i]), transpose(f.b_proj[i]), p, true, true)
+    end
     # for i in 1:length(f.measurement_angles)
     # 	f.b[:, i] .= assemble_linear(b_, (m(f.pp), g[i], f.pars), f.U, f.V)
     # end
@@ -377,8 +385,12 @@ function tangent_adjoint(f, p)
             # @show λ_j, dot_m
             rhs = assemble_linear((v, pars...) -> dot_a_(v, λ_j, nothing, dot_m, pars), f.pars, f.U, f.V)
             dot_λ_j =  f.AT \ -rhs
-            dot_m.free_values[i] = 0.0
             mul!(@view(measurements_tangent[:, j, i]), f.b', dot_λ_j)
+            for ii in 1:length(f.measurement_angles)
+                θ = f.measurement_angles[ii]
+                measurements_tangent[ii, j, i] = sum(dot_b_(λ_j, nothing, dot_m, excitation_func(θ), pars))
+            end
+            dot_m.free_values[i] = 0.0
         end
     end
     return measurements_tangent
@@ -400,7 +412,6 @@ function _measure_adjoint_gmres_precond!(measurements, f, (solver, Pℓ), storag
         mul!(@view(measurements[:, i:i]), f.b', sol_, -1.0, 0.0)
     end
 end
-
 
 function (f::ModelFunction)(p)
     set_params!(f, p)
@@ -467,25 +478,13 @@ Zygote.@adjoint function (f::ModelFunction)(p)
         dot_a = zeros(num_free_dofs(f.M))
 
         for i in 1:length(f.extraction_locations)
-            # bar_u = FEFunction(f.U, solutions_adjoint_gradient[:, i])
-            # λ = FEFunction(f.U, solutions_adjoint[:, i])
-
-            # op = AffineFEOperator(
-            #     (u_m, v_m) -> ∫(u_m*v_m)f.pars.dΩ, 
-            #     v_m -> dot_a_(bar_u, λ, f.m, v_m, f.pars),
-            #     #v_m -> dot_a(f.pp)(bar_u, λ, v_m, pars),
-            #     M_, f.M)
-            # grad = Gridap.solve(op)
-            # global Atest = Gridap.get_matrix(op)
-            #dot_a = assemble_linear(v_m -> dot_a_(bar_u, λ, f.m, v_m, f.pars), (), f.M, f.M)
             backproject!(dot_a, f.backr, @view(solutions_adjoint_gradient[:, i]), @view(solutions_adjoint[:, i]))
-            # grad = 
-            # @show maximum(abs.(dot_a .- dot_a2))
-            # @show grad
-            # @show grad2
-            # @show maximum(abs.(grad.free_values .- grad2))
-            # grad_vals += f.I_M .* dot_a
             grad_vals += dot_a
+            # we reuse the dot_a for dot_b
+            for ii in 1:length(f.measurement_angles)
+                mul!(dot_a, f.b_proj[ii], @view(solutions_adjoint[:, i]), measurements_[ii, i], false)
+                grad_vals += dot_a
+            end
         end
         return (nothing, grad_vals, )
     end
@@ -533,7 +532,7 @@ function project_to_boundary(f, adj_sols)
     # M is a zeroth order FE space (we use it here for projection)
     g_hats = zeros(length(bnd_cell_ids), length(adj_sols))
     for (i, adj_sol) in enumerate(adj_sols)
-        op = AffineFEOperator((u, v) -> a_id(u, v, f.pars), v -> b_(adj_sol, nothing, v, f.pars), f.M, f.M)
+        op = AffineFEOperator((u, v) -> a_id(u, v, f.pars), v -> b_(adj_sol, f.m, v, f.pars), f.M, f.M)
         A = Gridap.get_matrix(op)[bnd_cell_ids, bnd_cell_ids]
         b = Gridap.get_vector(op)[bnd_cell_ids]
         g_hats[:, i] .= A\b

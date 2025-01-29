@@ -5,6 +5,7 @@ mkpath("figures")
 mkpath("figures/mp4s")
 mkpath("figures/gifs")
 mkpath("figures/tangent_gradient")
+mkpath("figures/adjoint_gradient/")
 
 # plot material
 let
@@ -39,11 +40,9 @@ let
     #    text!()
     end
 
-    
     plot!(size=(400, 300), dpi=1000)
     savefig("figures/material.png")
 end
-
 
 ## plot main figure
 let
@@ -188,7 +187,6 @@ let
     sols = solve_forward(FF_true, true_m_pars)
 
     for n_sol ∈ [51, 101, 151]
-        n_sol = 51
         plot(aspect_ratio=:equal)
         θs = 0:0.01:2π
         plot_solution(sols[n_sol], (0, 1))
@@ -372,6 +370,10 @@ let # gradient computation benchmarks
     mean_squared_error_forward(p) = sum((measure_forward(FF, p) .- true_measurements).^2) #./ length(true_measurements)
     p0 = fill(0.5, size(true_m_pars))
 
+    grad_FD = finite_difference_grad(mean_squared_error, p0, 1e-6)
+    grad_AD = Zygote.gradient(mean_squared_error, p0)
+    @show maximum(abs.(grad_FD .- grad_AD[1]))
+
     trial_FD_adjoint = @benchmark finite_difference_grad($(mean_squared_error), $(p0), $(1e-6))
     trial_FD_non_adjoint = @benchmark finite_difference_grad($(mean_squared_error_forward), $(p0), $(1e-6))
     trial_adjoint_adjoint = @benchmark Zygote.gradient($(mean_squared_error), $(p0))
@@ -386,7 +388,7 @@ let # gradient computation benchmarks
     display(trial_adjoint_adjoint)
 end
 
-# let # taylor remainder test
+let # taylor remainder test
     FF = ModelFunction(measurement_angles(), extraction_locations(), "circle_middle.msh", iterative=false; order=1)
     true_m_pars = project_function(FF.M, FF.pars, true_m_func).free_values
     true_measurements = FF(true_m_pars)
@@ -434,7 +436,7 @@ end
     ylabel!(L"taylor remainder $\,$")
     plot!(size=(400, 300), dpi=1000, legend=:bottomright)
     savefig("figures/taylor_remainder.png")
-# end
+end
 
 
 let # tangent gradient plots
@@ -506,102 +508,35 @@ let # adjoint gradient plots
 
     grad = Zygote.gradient(mean_squared_error, p0)
 
-    # for i in 1:length(FF.extraction_locations)
-    #     temp = FEFunction(FF.U, FF.temp_storage[:, i])
-    #     plot_solution(temp)
+    for i in 1:length(FF.extraction_locations)
+        temp = FEFunction(FF.U, FF.temp_storage[:, i])
+        plot_solution(temp)
 
-    #     xlims!(-1.3, 1.35)
-    #     ylims!(-1.3, 1.3)
+        xlims!(-1.3, 1.35)
+        ylims!(-1.3, 1.3)
 
-    #     FF0 = FF(p0)
+        FF0 = FF(p0)
 
-    #     rs = fill(1.1, length(FF.measurement_angles))
-    #     xs = [rs[i]*cos(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
-    #     ys = [rs[i]*sin(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
+        rs = fill(1.1, length(FF.measurement_angles))
+        xs = [rs[i]*cos(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
+        ys = [rs[i]*sin(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
 
-    #     # plot "coordinate system"
-    #     plot!(xs[12:end], ys[12:end], color=:gray, linestyle=:dash, label=nothing)
-    #     plot!(xs[1:9], ys[1:9], color=:black, linestyle=:solid, label=nothing, arrow=(:closed))
-    #     plot!([1.1, 1.3], [0.0, 0.0], color=:black, linestyle=:solid, legend=nothing, arrow=(:closed))
+        # plot "coordinate system"
+        plot!(xs[12:end], ys[12:end], color=:gray, linestyle=:dash, label=nothing)
+        plot!(xs[1:9], ys[1:9], color=:black, linestyle=:solid, label=nothing, arrow=(:closed))
+        plot!([1.1, 1.3], [0.0, 0.0], color=:black, linestyle=:solid, legend=nothing, arrow=(:closed))
 
-    #     # plot measurement difference (with scatter)
-    #     rs = 1.1 .+ (FF0 .- true_measurements)[:, i]
-    #     xs = [rs[i]*cos(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
-    #     ys = [rs[i]*sin(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
+        # plot measurement difference (with scatter)
+        rs = 1.1 .+ (FF0 .- true_measurements)[:, i]
+        xs = [rs[i]*cos(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
+        ys = [rs[i]*sin(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
 
-    #     scatter!([xs..., xs[1]], [ys..., ys[1]], color=i, linestyle=:solid, label=nothing, ms=1.5, markerstrokewidth=0.3)
-    #     plot!(size=(400, 300), dpi=1000)
-    #     savefig("figures/adjoint_gradient/adjoint_solution_$(i).png")
-    # end
+        scatter!([xs..., xs[1]], [ys..., ys[1]], color=i, linestyle=:solid, label=nothing, ms=1.5, markerstrokewidth=0.3)
+        plot!(size=(400, 300), dpi=1000)
+        savefig("figures/adjoint_gradient/adjoint_solution_$(i).png")
+    end
 
     p = plot_solution(FEFunction(FF.M, grad[1] .* FF.I_M))
     plot!(size=(400, 300), dpi=1000)
     savefig("figures/gradient.png")
 end
-
-# let # gradient plots
-
-
-# end
-
-
-
-
-# adj_sol = solve_adjoint(FF, true_m_pars)
-# θs = 0:0.01:2π
-
-# for i in 1:20
-#     dot_m = FEFunction(FF.M, zeros(length(true_m_pars)))
-#     dot_m.free_values[rand(1:length(true_m_pars))] = 1.0
-#     tang_sol = solve_tangent(FF, adj_sol[7], dot_m)
-#     boundary_proj = project_to_boundary(FF, [tang_sol])
-#     p = plot_solution(tang_sol)
-#     for i in 1:length(FF.extraction_locations)
-#         r = extraction_radius()
-#         xs = [FF.extraction_locations[i][1] .+ r*cos.(θs)]
-#         ys = [FF.extraction_locations[i][2] .+ r*sin.(θs)]
-#         plot!(xs, ys, color=:black, linestyle=:dash, label=nothing)
-        
-#         annotate!(FF.extraction_locations[i][1]-r/3, FF.extraction_locations[i][2]+r/3, ("$i", 8, :center, :black))
-#     #    text!()
-#     end
-#     display(p)
-#     sleep(1)
-# end
-# plot(boundary_proj[1], boundary_proj[2][:, 1])
-
-# true_measurements = FF(true_m_pars)
-# mean_squared_error(p) = sum((FF(p) .- true_measurements).^2) ./ length(true_measurements)
-
-# p0 = fill(0.5, size(true_m_pars))
-
-# grad = Zygote.gradient(mean_squared_error, p0)
-
-# temp = FEFunction(FF.U, FF.temp_storage[:, 3])
-# plot_solution(temp)
-
-# xlims!(-1.3, 1.3)
-# ylims!(-1.3, 1.3)
-
-# FF0 = FF(p0)
-
-# rs = 1.1 .+ (FF0 .- true_measurements)[:, 3]*0.0
-# xs = [rs[i]*cos(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
-# ys = [rs[i]*sin(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
-
-# plot!(xs[12:end], ys[12:end], color=:black, linestyle=:dash, label=nothing)
-# plot!(xs[1:9], ys[1:9], color=:black, linestyle=:dash, label=nothing, arrow=(:closed))
-# plot!([1.1, 1.3], [0.0, 0.0], color=:black, linestyle=:dash, legend=nothing, arrow=(:closed))
-
-# rs = 1.1 .+ (FF0 .- true_measurements)[:, 3]
-# xs = [rs[i]*cos(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
-# ys = [rs[i]*sin(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
-
-# scatter!([xs..., xs[1]], [ys..., ys[1]], color=3, linestyle=:solid, label=nothing, ms=1.5, markerstrokewidth=0.3)
-# #     else
-# #         plot!(xs, ys, color=:gray, linestyle=:dash, label=nothing)
-# #     end
-# # end
-
-# grad_fefunc = FEFunction(FF.M, grad[1])
-# plot_solution(grad_fefunc)

@@ -1,22 +1,27 @@
 
 ∇ₙ(u, n) = dot(∇(u), n)
 # original bilinear form
-a_(u, v, m, (dΩ, dΓ, n, α_h)) = ∫(m*dot(∇(u), ∇(v)))dΩ - ∫(m*∇ₙ(u, n)*v + u*∇ₙ(v, n))dΓ + ∫(α_h[1] * u * v)dΓ # nitsche trick (stabilization)
+a_(u, v, m, (dΩ, dΓ, n, α_h)) = ∫(m*dot(∇(u), ∇(v)))dΩ - ∫(m*∇ₙ(u, n)*v + m*u*∇ₙ(v, n))dΓ + ∫(α_h[1] * u * v)dΓ # nitsche trick (stabilization)
 
 # the part of the bilinear form that is linear in m (for speed)
-a1_(u, v, m, (dΩ, dΓ, n, α_h)) = ∫(dot(∇(u), ∇(v)))dΩ - ∫(∇ₙ(u, n)*v)dΓ
-# the part of the bilinear form that is affine in m (for speed)
-a2_(u, v, m, (dΩ, dΓ, n, α_h)) = ∫(0.0*dot(∇(u), ∇(v)))dΩ - ∫(0.0*∇ₙ(u, n)*v + u*∇ₙ(v, n))dΓ + ∫(α_h[1] * u * v)dΓ # nitsche trick (stabilization)
-
+a1_(u, v, m, (dΩ, dΓ, n, α_h)) = ∫(dot(∇(u), ∇(v)))dΩ - ∫(∇ₙ(u, n)*v + u*∇ₙ(v, n))dΓ
+# the part of the bilinear form that is const in m (for speed)
+a2_(u, v, m, (dΩ, dΓ, n, α_h)) = ∫(0*dot(∇(u), ∇(v)))dΩ - ∫(0*∇ₙ(u, n)*v + 0*u*∇ₙ(v, n))dΓ + ∫(α_h[1] * u * v)dΓ # nitsche trick (stabilization)
 
 # this is the original tangent bilinear form
-dot_a_(u, v, m, dot_m, (dΩ, dΓ, n, α_h)) = ∫(dot_m*dot(∇(u), ∇(v)))dΩ - ∫(dot_m*dot(∇(u), n)*v)dΓ
+dot_a_(u, v, m, dot_m, (dΩ, dΓ, n, α_h)) = ∫(dot_m*dot(∇(u), ∇(v)))dΩ - ∫(dot_m*∇ₙ(u, n)*v + dot_m*u*∇ₙ(v, n))dΓ
 
 # for speed (because dot_a is linear in m, we can precompute the matrices)
-dot_a_temp(u, v, m, dot_m, (dΩ, dΓ, n, α_h)) = ∫(dot(∇(u), ∇(v)))dΩ - ∫(dot(∇(u), n)*v)dΓ
+dot_a_temp(u, v, m, dot_m, (dΩ, dΓ, n, α_h)) = ∫(dot(∇(u), ∇(v)))dΩ - ∫(∇ₙ(u, n)*v + u*∇ₙ(v, n))dΓ
 
-b_(v, m, g, (dΩ, dΓ, n, α_h)) = ∫(∇ₙ(v,  n)*g)dΓ - ∫(α_h[1] * (g * v))dΓ # nitsche trick (stabilization)
-bnew_(v, m, g, (dΩ, dΓ, n, α_h)) = ∫(∇ₙ(v,  n)*g)dΓ
+b_(v, m, g, (dΩ, dΓ, n, α_h)) = ∫(m*∇ₙ(v,  n)*g)dΓ - ∫(α_h[1] * (g * v))dΓ # nitsche trick (stabilization)
+# the part of b that is linear in b (because its linear: dot_b_ without m_dot) (for speed)
+b1_(v, m, g, (dΩ, dΓ, n, α_h)) = ∫(∇ₙ(v,  n)*g)dΓ
+# that part of b that is constant in b
+b2_(v, m, g, (dΩ, dΓ, n, α_h)) = ∫(0*∇ₙ(v,  n)*g)dΓ - ∫(α_h[1] * (g * v))dΓ # nitsche trick (stabilization)
+
+dot_b_(v, m, dot_m, g, (dΩ, dΓ, n, α_h)) = ∫(dot_m*∇ₙ(v,  n)*g)dΓ
+
 c_(u, m, μ, (dΩ, dΓ, n, α_h)) = ∫(μ*u)dΩ
 
 true_ellipse_parameters() = (μ1=0.0, μ2=-0.3, r=π/4, a=0.3, b=0.8)
