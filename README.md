@@ -3,7 +3,7 @@
 Reproducibility Repository accompanying the presentation [Applying Adjoints Twice](https://tam724.github.io/Applying-Adjoints-Twice_presentation/) ([repo link](https://github.com/tam724/Applying-Adjoints-Twice_presentation)).
 
 Here, we exemplarily implement a inverse problem that (using adjoint approaches) can be implemented quite efficiently.
-The forward model is given by the poisson equation with spatially varying heat coefficient (the unknown). Measurements are obtained by multiple Dirichlet-boundary excitations and extraction by averaging certain parts of the domain. For details see the [slides](http://127.0.0.1:3000/index.html#/poisson-example).
+The forward model is given by the poisson equation with spatially varying heat coefficient (the unknown). Measurements are obtained by multiple Dirichlet-boundary excitations and extraction by averaging certain parts of the domain. For details see the [slides](https://tam724.github.io/Applying-Adjoints-Twice_presentation/).
 
 <img src="figures/gifs/forward.gif" width="300"/>
 
