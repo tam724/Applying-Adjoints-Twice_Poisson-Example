@@ -397,7 +397,9 @@ let # taylor remainder test
     mean_squared_error_non_adjoint(p) = sum((measure_forward(FF, p) .- true_measurements).^2) #./ length(true_measurements)
     p0 = fill(0.5, size(true_m_pars))
 
-    grad_FD_adjoint_05 = finite_difference_grad(mean_squared_error, p0, 1e-5)
+    grad_FD_adjoint_06 = finite_difference_grad(mean_squared_error, p0, 1e-6)
+    grad_FD_adjoint_07 = finite_difference_grad(mean_squared_error, p0, 1e-7)
+    # grad_FD_adjoint_05 = finite_difference_grad(mean_squared_error, p0, 1e-5)
     grad_FD_adjoint_03 = finite_difference_grad(mean_squared_error, p0, 1e-3)
     # grad_FD_non_adjoint = finite_difference_grad(mean_squared_error_non_adjoint, p0, 1e-5)
     grad_adjoint_adjoint = Zygote.gradient(mean_squared_error, p0)[1]
@@ -414,19 +416,16 @@ let # taylor remainder test
     seq1(h) = [abs(mean_squared_error(p0 .+ h.*p_perturb) - mean_squared_error(p0)) for p_perturb in p_perturbs] |> mean
     seq2(h, grad) = h.* [abs(mean_squared_error(p0 .+ h.*p_perturb) / h - mean_squared_error(p0) / h - dot(grad, p_perturb)) for p_perturb in p_perturbs] |> mean
 
-# FEFunction(FF.M, grad1 .- grad2) |> plot_solution
-# FEFunction(FF.M, grad2) |> plot_solution
-# FEFunction(FF.M, grad3[1] .- grad1) |> plot_solution
-# FEFunction(FF.M, grad4 .- grad1) |> plot_solution
-# FEFunction(FF.M, grad3[1] .- grad4) |> plot_solution
-
     hs = [1.0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]
 
-    plot(hs, seq1.(hs), xaxis=:log, yaxis=:log, marker=:o, label="1st rem.")
-    plot!(hs, seq2.(hs, Ref(grad_adjoint_adjoint)), marker=:o, label="2nd rem. (Adjoint)")
+    plot(hs, seq1.(hs), xaxis=:log, yaxis=:log, marker=:x, label="1st rem.", color=1)
     # plot!(hs, seq2.(hs, Ref(grad_non_adjoint_adjoint)), marker=:o, label="2nd Taylor remainder(nad_ad)")
-    plot!(hs, seq2.(hs, Ref(grad_FD_adjoint_03)), marker=:o, label="2nd rem. (FD, Δ=1e-3)")
-    plot!(hs, seq2.(hs, Ref(grad_FD_adjoint_05)), marker=:o, label="2nd rem. (FD, Δ=1e-5)")
+    plot!(hs, seq2.(hs, Ref(grad_FD_adjoint_03)), marker=:x, label="2nd rem. (FD, 1e-3)", color=3)
+    # plot!(hs, seq2.(hs, Ref(grad_FD_adjoint_05)), marker=:x, label="2nd rem. (FD, 1e-5)", color=4)
+    plot!(hs, seq2.(hs, Ref(grad_FD_adjoint_06)), marker=:x, label="2nd rem. (FD, 1e-6)", color=4)
+    plot!(hs, seq2.(hs, Ref(grad_FD_adjoint_07)), marker=:x, label="2nd rem. (FD, 1e-7)", color=5)
+    plot!(hs, seq2.(hs, Ref(grad_adjoint_adjoint)), marker=:x, label="2nd rem. (Adjoint)", color=2)
+
     # plot!(hs, seq2.(hs, Ref(grad_FD_non_adjoint)), marker=:o, label="2nd Taylor remainder(FD_nad)")
 
     plot!(hs, 0.001.*hs, color=:gray, linestyle=:dash, label="1st order")
