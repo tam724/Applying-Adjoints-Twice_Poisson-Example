@@ -18,7 +18,7 @@ let
 
     xlims!(-1.05, 1.05)
     ylims!(-1.05, 1.05)
-    plot!(cos.(θs), sin.(θs), color=:gray, label=nothing)
+    plot!(cos.(θs), sin.(θs), color=:gray, label=nothing, fontfamily="Computer Modern")
 
     # plot grid
     # for line in FF.pars.dΩ.quad.trian.model.grid_topology.n_m_to_nface_to_mfaces[2, 1]
@@ -40,7 +40,7 @@ let
     #    text!()
     end
 
-    plot!(size=(400, 300), dpi=1000)
+    plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
     savefig("figures/material.png")
 end
 
@@ -67,7 +67,7 @@ let
     end
     xlims!(-1.05, 1.35)
     ylims!(-1.05, 1.05)
-    plot!(cos.(θs), sin.(θs), color=:gray, label=nothing)
+    plot!(cos.(θs), sin.(θs), color=:gray, label=nothing, fontfamily="Computer Modern")
 
 
     scatter!(cos.(FF_true.measurement_angles[2:end]), sin.(FF_true.measurement_angles[2:end]), color=:white, label=nothing, marker=:dot, ms=1.5, markerstrokecolor=:black, markerstrokewidth=0.5)
@@ -82,7 +82,7 @@ let
         annotate!(FF_true.extraction_locations[i][1]-r/3, FF_true.extraction_locations[i][2]+r/3, ("$i", 8, :center, :white))
     #    text!()
     end
-    plot!(size=(400, 300), dpi=1000)
+    plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
     savefig("figures/forward_main.png")
 end
 
@@ -144,6 +144,7 @@ let
     θs = 0:0.01:2π
     for i in [1, 51, 101, 151]
         plot_solution(sols[i], (0, 1))
+        plot!(fontfamily="Computer Modern")
         for Δi_bc in reverse(0:9)
             i_bc = i - Δi_bc
             if i_bc <= 0
@@ -193,7 +194,7 @@ let
 
         xlims!(-1.05, 1.05)
         ylims!(-1.05, 1.05)
-        plot!(cos.(θs), sin.(θs), color=:gray, label=nothing)
+        plot!(cos.(θs), sin.(θs), color=:gray, label=nothing, fontfamily="Computer Modern")
 
         p1 = plot!([1.0, 0.0, cos(FF_true.measurement_angles[n_sol])], [0.0, 0.0, sin(FF_true.measurement_angles[n_sol])], color=:white, label=nothing)
         p1 = plot!(size=(480, 480))
@@ -204,7 +205,7 @@ let
         scatter!(cos.(FF_true.measurement_angles[1:end]), sin.(FF_true.measurement_angles[1:end]), color=:white, label=nothing, marker=:dot, ms=1.5, markerstrokecolor=:black, markerstrokewidth=0.5)
         scatter!(cos.(FF_true.measurement_angles[n_sol:n_sol]), sin.(FF_true.measurement_angles[n_sol:n_sol]), color=:black, label=nothing, marker=:dot, ms=1.5, markerstrokecolor=:black, markerstrokewidth=0.5)
 
-        plot!(size=(400, 300), dpi=1000)
+        plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
         savefig("figures/forward_additional_$(n_sol).png")
     end
 end
@@ -215,13 +216,13 @@ let
     true_m_pars = project_function(FF_true.M, FF_true.pars, true_m_func).free_values
 
     measurements = FF_true(true_m_pars)
-    plot()
+    plot(fontfamily="Computer Modern")
     for i in 1:length(FF_true.extraction_locations)
         scatter!(FF_true.measurement_angles, measurements[:, i], label="j=$(i)", ms=1, markerstrokewidth=0.3, color=i)
     end
     xlabel!(L"angle $\theta^{(i)}$")
-    ylabel!(L"observation $\Sigma^{(ji)}$")
-    plot!(size=(400, 300), dpi=1000, legend_columns=2)
+    ylabel!(L"observations $\mathcal{Y}^{(ji)}$")
+    plot!(size=(400, 300), dpi=1000, legend_columns=2, fontfamily="Computer Modern")
     savefig("figures/measurements.png")
 end
 
@@ -244,7 +245,7 @@ let
 
     ylims!(extrema(measurements))
     xlabel!(L"angle $\theta^{(i)}$")
-    ylabel!(L"observation $\Sigma^{(ji)}$")
+    ylabel!(L"observations $\mathcal{Y}^{(ji)}$")
     plot!(size=(400, 300), dpi=1000, legend_columns=2)
     savefig("figures/measurements_extra_51.png")
 end
@@ -281,9 +282,9 @@ let
         plot!(θs, g_hats[:, i], color=i, label="j=$(i)")
     end
     xlabel!(L"angle $\theta$")
-    ylabel!(L"riesz representation $\nabla_n  \lambda^{(j)}$")
+    ylabel!(L"Riesz representation $\nabla_n  \lambda^{(j)}$")
 
-    plot!(size=(400, 300), dpi=1000, legend_columns=2, legend=:top)
+    plot!(size=(400, 300), dpi=1000, legend_columns=2, legend=:top, fontfamily="Computer Modern")
     savefig("figures/boundary_projections.png")
 end
 
@@ -307,11 +308,11 @@ let
             else
                 clr = :white
             end
-            plot!(xs, ys, color=clr, linestyle=:dash, label=nothing)
+            plot!(xs, ys, color=clr, linestyle=:dash, label=nothing, fontfamily="Computer Modern")
             
             annotate!(FF_true.extraction_locations[i][1]-r/3, FF_true.extraction_locations[i][2]+r/3, ("$i", 8, :center, clr))
         end
-        plot!(size=(400, 300), dpi=1000)
+        plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
         savefig("figures/adjoint_forward_$(n_sol).png")
     end
 end
@@ -432,8 +433,8 @@ let # taylor remainder test
     # plot!(hs, 0.0001.*hs, color=:gray, linestyle=:dash, label=nothing)
     plot!(hs, 0.00005.*hs.^2, color=:gray, linestyle=:dashdot, label="2nd order")
     xlabel!(L"h")
-    ylabel!(L"taylor remainder $\,$")
-    plot!(size=(400, 300), dpi=1000, legend=:bottomright)
+    ylabel!(L"Taylor remainder $\,$")
+    plot!(size=(400, 300), dpi=1000, legend=:bottomright, fontfamily="Computer Modern")
     savefig("figures/taylor_remainder.png")
 end
 
@@ -445,9 +446,9 @@ let # tangent gradient plots
 
     adj_sol = solve_adjoint(FF, true_m_pars)
 
-    p_idx = rand(1:length(true_m_pars), 10)
+    p_idx = [2968, 2495,2345,376,1211,1606,1300,1611,1865,2477]
     for i in 1:10
-        p2 = plot()
+        p2 = plot(fontfamily="Computer Modern")
         θs = 0:0.01:2π
         for n_adj_sol = 1:7
             dot_m = FEFunction(FF.M, zeros(length(true_m_pars)))
@@ -455,6 +456,7 @@ let # tangent gradient plots
             tang_sol = solve_tangent(FF, adj_sol[n_adj_sol], dot_m)
             boundary_proj = project_to_boundary(FF, [tang_sol])
             p = plot_solution(tang_sol) #  cmap=cgrad([cgrad(:temperaturemap)[1], cgrad(:temperaturemap)[end]]))
+            plot!(fontfamily="Computer Modern")
             for i in 1:length(FF.extraction_locations)
                 r = extraction_radius()
                 xs = [FF.extraction_locations[i][1] .+ r*cos.(θs)]
@@ -464,11 +466,11 @@ let # tangent gradient plots
                 
                 annotate!(FF.extraction_locations[i][1]-r/3, FF.extraction_locations[i][2]+r/3, ("$i", 8, :center, clr))
             end
-            plot!(size=(400, 300), dpi=1000)
+            plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
             savefig("figures/tangent_gradient/gradient_tangent_$(n_adj_sol)_$(i).png")
             plot!(p2, boundary_proj[1], boundary_proj[2][:, 1])
         end
-        plot!(p2, size=(400, 300), dpi=1000)
+        plot!(p2, size=(400, 300), dpi=1000, fontfamily="Computer Modern")
         savefig("figures/tangent_gradient/gradient_tangent_$(i)")
     end
 end
@@ -492,8 +494,8 @@ let
     end
 
     xlabel!(L"angle $\theta^{(i)}$")
-    ylabel!(L"observation $\Sigma^{(ji)}$")
-    plot!(size=(400, 300), dpi=1000, legend_columns=2)
+    ylabel!(L"observations $\mathcal{Y}^{(ji)}$")
+    plot!(size=(400, 300), dpi=1000, legend_columns=2, fontfamily="Computer Modern")
     savefig("figures/measurements_difference.png")
 end
 
@@ -510,6 +512,7 @@ let # adjoint gradient plots
     for i in 1:length(FF.extraction_locations)
         temp = FEFunction(FF.U, FF.temp_storage[:, i])
         plot_solution(temp)
+        plot!(fontfamily="Computer Modern")
 
         xlims!(-1.3, 1.35)
         ylims!(-1.3, 1.3)
@@ -531,11 +534,11 @@ let # adjoint gradient plots
         ys = [rs[i]*sin(θ) for (i, θ) ∈ enumerate(FF.measurement_angles)]
 
         scatter!([xs..., xs[1]], [ys..., ys[1]], color=i, linestyle=:solid, label=nothing, ms=1.5, markerstrokewidth=0.3)
-        plot!(size=(400, 300), dpi=1000)
+        plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
         savefig("figures/adjoint_gradient/adjoint_solution_$(i).png")
     end
 
     p = plot_solution(FEFunction(FF.M, grad[1] .* FF.I_M))
-    plot!(size=(400, 300), dpi=1000)
+    plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
     savefig("figures/gradient.png")
 end

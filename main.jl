@@ -178,7 +178,7 @@ let # plot hidden truth material
 
     xlims!(-1.05, 1.05)
     ylims!(-1.05, 1.05)
-    plot!(cos.(θs), sin.(θs), color=:gray, label=nothing)
+    plot!(cos.(θs), sin.(θs), color=:gray, label=nothing, fontfamily="Computer Modern")
 
     scatter!(cos.(measurement_angles()[1:end]), sin.(measurement_angles()[1:end]), color=:white, label=nothing, marker=:dot, ms=1.5, markerstrokecolor=:black, markerstrokewidth=0.5)
 
@@ -191,7 +191,7 @@ let # plot hidden truth material
         
         annotate!(extr_locs[i][1]-r/3, extr_locs[i][2]+r/3, ("$i", 8, :center, :black))
     end
-    plot!(size=(400, 300), dpi=1000)
+    plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
     savefig("figures/material.png")
 end
 
@@ -201,7 +201,7 @@ let # plot optimized material
 
     xlims!(-1.05, 1.05)
     ylims!(-1.05, 1.05)
-    plot!(cos.(θs), sin.(θs), color=:gray, label=nothing)
+    plot!(cos.(θs), sin.(θs), color=:gray, label=nothing, fontfamily="Computer Modern")
 
     # plot grid
     for line in FF.pars.dΩ.quad.trian.model.grid_topology.n_m_to_nface_to_mfaces[2, 1]
@@ -224,7 +224,7 @@ let # plot optimized material
     end
 
     
-    plot!(size=(400, 300), dpi=1000)
+    plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
     savefig("figures/optimized.png")
 end
 
@@ -291,9 +291,9 @@ let # plot final observations and noisy measurements
         plot!(measurement_angles(), true_measurements[:, i], ms=1, markerstrokewidth=0.3, color=i, alpha=0.5, label=nothing)    
         scatter!(measurement_angles(), current_measurements[:, i], ms=1, markerstrokewidth=0.3, color=i, label="j=$(i)")
     end
-    plot!(size=(400, 300), dpi=1000, legend_columns=2)
+    plot!(size=(400, 300), dpi=1000, legend_columns=2, fontfamily="Computer Modern")
     xlabel!(L"angle $\theta^{(i)}$")
-    ylabel!(L"observations $\Sigma^{(ji)}$")
+    ylabel!(L"observations $\mathcal{Y}^{(ji)}$")
     savefig("figures/optimized_observations.png")
 end
 
@@ -301,6 +301,6 @@ let # plot objective function
     scatter([it.value for it in res.trace], yaxis=:log, label=nothing)
     xlabel!("iteration")
     ylabel!("MSE")
-    plot!(size=(400, 300), dpi=1000)
+    plot!(size=(400, 300), dpi=1000, fontfamily="Computer Modern")
     savefig("figures/MSE.png")
 end
